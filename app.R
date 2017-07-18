@@ -14,7 +14,8 @@ ui <- navbarPage("Map", id="nav",
                  width = 300, height = "auto",
                  checkboxInput("check","Hide Rating Area Label"),
                  selectInput("choose","Choose shape file",
-                             c("TN","USA")),
+                             c("USA",as.vector(states$STUSAB)),
+                             selected="TN"),
                  selectInput("var", "Var",
                              c("None","rate","var2")
                  )
@@ -22,20 +23,24 @@ ui <- navbarPage("Map", id="nav",
 ))
 
 server <- function(input, output, session) {
+  
+  #data to plot
   dtplot <- reactive({
-    if(input$choose=="TN") {
-      return(
-        list(ct=county_TN,
-             rt=rating_TN)
-        )
-    } else if(input$choose=="USA") {
+   if(input$choose=="USA") {
       return(
         list(ct=county_full2,
              rt=rating_area2)
       )
-    } else stop("Error input")
+   } else if(input$choose %in% states$STUSAB) {
+      fips <- states$STATE[states$STUSAB==input$choose]
+      dt1 <- county_full2[county_full2$STATEFP==fips,]
+      dt2 <- rating_area2[grepl(paste0(input$choose,"_*"),rating_area2$name),]
+      return(list(ct=dt1,
+           rt=dt2))
+   } else stop("sth wrong")
   })
   
+  #base map with county borders
   output$mymap <- renderLeaflet({
     leaflet(data=dtplot()$ct,options = leafletOptions(minZoom = 3.5, maxZoom = 8)) %>% 
       #addTiles() %>%
@@ -43,6 +48,7 @@ server <- function(input, output, session) {
       addPolylines(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE) 
   })
   
+  #variable to plot
   x <- reactive({
     if(input$var=="rate") {
       return(dtplot()$rt$rate)
@@ -53,15 +59,17 @@ server <- function(input, output, session) {
     } else stop("Error input")
   })
   
+  #upper layer of rating areas 
   observe({
     if(!is.null(x())) {
     leafletProxy("mymap",data=dtplot()$rt) %>%
       addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity =0.5, fillColor = ~pall(x()),
+                  label=~as.character(name),labelOptions=labelOptions(clickable=TRUE, direction = 'top', textOnly = TRUE),
                   group="rating_area") %>% 
       addLabelOnlyMarkers(lng=~lng, lat=~lat, label =  ~as.character(name), 
-                          labelOptions = labelOptions(noHide = TRUE, direction = 'top', textOnly = TRUE, 
-                                                      style=list("font-size" = "12px")),
-                          group="rating_label") %>%
+                        labelOptions = labelOptions(noHide = TRUE, direction = 'top', textOnly = TRUE, 
+                                                    style=list("font-size" = "10px")),
+                        group="rating_label") %>%
         showGroup("rating_area") 
     } else {
       leafletProxy("mymap") %>% hideGroup(c("rating_area","rating_label"))
@@ -69,6 +77,7 @@ server <- function(input, output, session) {
     
   })
   
+  #reactive legend
   observe({
     if(!is.null(x())) {
       leafletProxy("mymap") %>% clearControls() %>% addLegend("bottomleft",pal = pall, values = x(), title="Var by rating area")
@@ -77,6 +86,7 @@ server <- function(input, output, session) {
       }
   })
   
+  #reactive rating area label
   observe({
     if(input$check==TRUE) {
       leafletProxy("mymap") %>% hideGroup("rating_label") 
@@ -84,12 +94,7 @@ server <- function(input, output, session) {
       leafletProxy("mymap") %>% showGroup("rating_label") 
     }
   })
-  
-
 
 }
   
 shinyApp(ui, server)
-
-#modify graph
-#explore layer

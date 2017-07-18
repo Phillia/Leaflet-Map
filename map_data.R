@@ -86,4 +86,7 @@ county_full2$lat <- unlist(lapply(county_full2@polygons, function(dt) dt@labpt[2
 
 pall <- colorNumeric("viridis", NULL)
 
+library(dplyr)
+states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>% filter(as.numeric(STATE) < 60)
+
 
