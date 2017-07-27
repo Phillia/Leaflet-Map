@@ -17,7 +17,7 @@ ui <- navbarPage("Map", id="nav",
                              c("USA",as.vector(states$STUSAB)),
                              selected="TN"),
                  selectInput("var", "Var",
-                             c("None","rate","var2")
+                             c("None","rate","hhi")
                  )
    )
 ))
@@ -52,8 +52,8 @@ server <- function(input, output, session) {
   x <- reactive({
     if(input$var=="rate") {
       return(dtplot()$rt$rate)
-    } else if(input$var=="var2") {
-      return(dtplot()$rt$var2)
+    } else if(input$var=="hhi") {
+      return(dtplot()$rt$hhi)
     } else if(input$var=="None") {
       NULL
     } else stop("Error input")

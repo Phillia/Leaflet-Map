@@ -89,4 +89,11 @@ pall <- colorNumeric("viridis", NULL)
 library(dplyr)
 states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>% filter(as.numeric(STATE) < 60)
 
-
+##add hhi test
+load("hhi1.rda")
+#issues: map does not have PR, GU
+#Idaho only has 6 rating areas now, go back to old data (7 RA)
+test <- hhi1 %>% filter(!(state %in% c("PR","GU")))
+call <- as.character(rating_area2$name)
+#rating_area2$rate <- test$hhi[order(match(test$ratingarea,call))]
+rating_area2$hhi <- test$hhi[order(match(test$ratingarea,call))]
