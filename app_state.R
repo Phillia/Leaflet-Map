@@ -4,23 +4,39 @@ library(geojsonio)
 library(maptools)
 
 
-source("map_data.R")
+source("state_data.R")
 
 ui <- navbarPage("Map", id="nav",
                  tabPanel("Interactive map",
-   leafletOutput("mymap"),
+                          div(class="outer",
+                              
+                              tags$head(
+                                # Include our custom CSS
+                                includeCSS("styles.css"),
+                                includeScript("gomap.js")
+                              ),    
+                        
+   leafletOutput("mymap",width="90%", height="80%"),
    absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                  draggable = TRUE, top = 500, left = "auto", right = 20, bottom = "auto",
                  width = 300, height = "auto",
-                 checkboxInput("check","Hide Rating Area Label"),
+                 checkboxInput("check","Hide Rating Area Label",value=TRUE),
                  selectInput("choose","Choose shape file",
                              c("USA",as.vector(states$STUSAB)),
                              selected="TN"),
-                 selectInput("var", "Var",
-                             c("None","rate","hhi")
+                 selectInput("var", "Variable to plot",
+                             c("None","share"),
+                             selected = "share"
                  )
-   )
-))
+   ),
+   tags$div(id="cite",
+            'Data compiled for ', tags$em('Coming Apart: The State of White America, 1960–2010'), ' by Charles Murray (Crown Forum, 2012).'
+   )            
+)),
+tabPanel("Data Explorer",
+         dataTableOutput("mytable")
+)
+)
 
 server <- function(input, output, session) {
   
@@ -50,8 +66,8 @@ server <- function(input, output, session) {
   
   #variable to plot
   x <- reactive({
-    if(input$var=="rate") {
-      return(dtplot()$rt$rate)
+    if(input$var=="share") {
+      return(dtplot()$rt$share)
     } else if(input$var=="hhi") {
       return(dtplot()$rt$hhi)
     } else if(input$var=="None") {
@@ -79,8 +95,8 @@ server <- function(input, output, session) {
   
   #reactive legend
   observe({
-    if(!is.null(x())) {
-      leafletProxy("mymap") %>% clearControls() %>% addLegend("bottomleft",pal = pall, values = x(), title="Var by rating area")
+    if(!is.null(x()) & input$choose=="USA") {
+      leafletProxy("mymap") %>% clearControls() %>% addLegend("bottomleft",pal = pall, values = x(), title="Value by rating area")
     } else {
       leafletProxy("mymap") %>% clearControls() 
       }
@@ -93,6 +109,11 @@ server <- function(input, output, session) {
     } else {
       leafletProxy("mymap") %>% showGroup("rating_label") 
     }
+  })
+  
+  output$mytable <- renderDataTable({
+    names(test) <- c("state","reinsurance.as.share.of.total.incurred.claims") 
+    test %>% arrange(state)
   })
 
 }

@@ -3,8 +3,6 @@ library(geojsonio)
 library(maptools)
 library(rgdal)
 library(rgeos)
-library(reshape2)
-library(dplyr)
 rm(list=ls())
 
 trans <- function(dt,type) {
@@ -65,17 +63,18 @@ rating_area <- readOGR(dsn="./output/ratingAreas.shp",
 
 rating_area2 <- trans(rating_area,type="rating")
 #made up data 
-rating_area2$rate <- sample(1:10000,499)
-rating_area2$var2 <- sample(1:5,499,replace = TRUE)
+#rating_area2$rate <- sample(1:10000,499)
+#rating_area2$var2 <- sample(1:5,499,replace = TRUE)
 #static label needs location point
 rating_area2$lng <- unlist(lapply(rating_area2@polygons, function(dt) dt@labpt[1]))
 rating_area2$lat <- unlist(lapply(rating_area2@polygons, function(dt) dt@labpt[2]))
 
 
-##2.all county file from http://eric.clst.org/Stuff/USGeoJSON 
-#county_full <- geojsonio::geojson_read("gz_2010_us_050_00_500k.json", what = "sp")
-county_full <- readOGR(dsn="./cb_2016_us_county_20m/cb_2016_us_county_20m.shp", 
+##2.all county file
+#county_full <- geojsonio::geojson_read("gz_2010_us_050_00_500k.json", what = "sp") #from http://eric.clst.org/Stuff/USGeoJSON
+county_full <- readOGR(dsn="./cb_2016_us_county_20m/cb_2016_us_county_20m.shp",
                        layer = "cb_2016_us_county_20m",verbose = FALSE)
+#from: https://www.census.gov/geo/maps-data/data/cbf/cbf_counties.html
 #county_full <- county_full[!county_full$STATEFP !="72",]
 #county_full$lng <- unlist(lapply(county_full@polygons, function(dt) dt@labpt[1]))
 #county_full$lat <- unlist(lapply(county_full@polygons, function(dt) dt@labpt[2]))
@@ -84,40 +83,26 @@ county_full2 <- trans(county_full,type="county")
 county_full2$lng <- unlist(lapply(county_full2@polygons, function(dt) dt@labpt[1]))
 county_full2$lat <- unlist(lapply(county_full2@polygons, function(dt) dt@labpt[2]))
 
-###
 
+
+###
 pall <- colorNumeric("viridis", NULL)
 
 library(dplyr)
 states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>% filter(as.numeric(STATE) < 60)
 
 ##add hhi test
-#issues: map does not have PR, GU
-#Idaho only has 6 rating areas now, go back to old data (7 RA)
+# load("hhi1.rda")
+# #issues: map does not have PR, GU
+# #Idaho only has 6 rating areas now, go back to old data (7 RA)
+# test <- hhi1 %>% filter(!(state %in% c("PR","GU")))
+# call <- as.character(rating_area2$name)
+# #rating_area2$rate <- test$hhi[order(match(test$ratingarea,call))]
+# rating_area2$hhi <- test$hhi[order(match(test$ratingarea,call))]
 
-#load("hhi1.rda")
-#test <- hhi1 %>% filter(!(state %in% c("PR","GU")))
-#call <- as.character(rating_area2$name)
-#rating_area2$hhi <- test$hhi[order(match(test$ratingarea,call))]
-
-call <- as.character(rating_area2$name)
-
-load("hhi.drg.full2.rda")
-drg <- drg %>% filter(!(state %in% c("PR","GU"))) %>% mutate(market=gsub("_0","",market))
-#fill in 0 cell
-library(data.table)
-cons <- data.table(drg)
-cons <- cons[ ,list(rating_area=call),by=c("market","year")] %>% data.frame()
-drg <- drg %>% full_join(cons,by=c("market","year","rating_area")) %>% mutate(newvar=paste0(market,"_",year))
-
-add_metrics <- function(target,source,newname) {
-  source <- source %>% filter(newvar==newname)
-  target$new <-  source$hhi[order(match(source$ratingarea,call))]
-  names(target)[names(target)=="new"] <- newname
-  return(target)
-}
-
-for(i in unique(drg$newvar)) {
-  rating_area2 <- add_metrics(rating_area2,drg,i)
-}
+##state-level test data
+test <- read.csv("reinsurance-as-share-of-total-incurred-claims.csv",header=F,stringsAsFactors = F) 
+names(test) <- c("state","share")
+rating_area2$state <- as.character(rating_area2$name) %>% substr(1,2)
+rating_area2 <- merge(rating_area2,test,by="state")
 
