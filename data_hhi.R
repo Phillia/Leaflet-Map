@@ -112,7 +112,7 @@ drg <- drg %>% full_join(cons,by=c("market","year","rating_area")) %>% mutate(ne
 
 add_metrics <- function(target,source,newname) {
   source <- source %>% filter(newvar==newname)
-  target$new <-  source$hhi[order(match(source$ratingarea,call))]
+  target$new <-  source$hhi[order(match(source$rating_area,call))]
   names(target)[names(target)=="new"] <- newname
   return(target)
 }
