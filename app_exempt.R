@@ -36,7 +36,7 @@ ui <- navbarPage("Map", id="nav",
                                                         c("USA",as.vector(states$STUSAB)),
                                                         selected="TN"),
                                             selectInput("age", "Minimum Exempt Income for Specific Age",
-                                                        c(20:64),selected = 40),
+                                                        varlist,selected = "Age40"),
                                             h5("Data Source: CCIIO 2017 premium rates for individual non-smoker")
                                             
                               )
@@ -77,7 +77,7 @@ server <- function(input, output, session) {
         #variable to plot
         x <- reactive({
                 v <- dtplot()$rt
-                names(v)[names(v)==paste0("AgeX",input$age)] <- "inc"
+                names(v)[names(v)==input$age] <- "inc"
                 v$inc
                 
         })

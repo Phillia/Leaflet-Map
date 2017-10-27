@@ -36,7 +36,7 @@ ui <- navbarPage("Map", id="nav",
                                                         c("USA",as.vector(states$STUSAB)),
                                                         selected="TN"),
                                             selectInput("var", "Select Variable to Plot",
-                                                        c("None",unique(drg$newvar)))
+                                                        c("None",varlist))
                               ),
                               
                               conditionalPanel(

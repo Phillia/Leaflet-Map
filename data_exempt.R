@@ -120,36 +120,42 @@ call <- as.character(rating_area2$name)
 
 
 
-raw <- read.csv("CCIIO_2017_ra-threshold-income-by-age.csv")
+prem <- read.csv("CCIIO_2017_ra-threshold-income-by-age.csv")
 
 #filter out states not in datasets 
-states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>% filter(STUSAB %in% unique(raw$statecode))
+states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>% filter(STUSAB %in% unique(prem$statecode))
 
 #data for plot
-prem <- raw %>% 
+prem <- prem %>%
         mutate(rating_area=paste0(statecode,"_",as.integer(substr(ratingarea,3,4)))) %>%
         select(-ratingarea,-statecode) %>% right_join(data.frame(rating_area=call,stringsAsFactors=FALSE))
-names(prem)[names(prem)=="X0.20"] <- "X20"
+names(prem) <- gsub("X","Age",names(prem))
+varlist <- names(prem)[grepl("Age",names(prem))]
+rating_area2$name <- as.character(rating_area2$name)
+rating_area2@data <- rating_area2@data %>% left_join(prem,by=c("name"="rating_area"))
 
-add_metrics <- function(target,source,varname) {
-        names(source)[names(source)==varname] <- "inc"
-        target$inc <-  source$inc[order(match(source$rating_area,call))]
-        names(target)[names(target)=="inc"] <- paste0("Age",varname)
-        return(target)
-}
 
-grp <- names(prem)[names(prem)!="rating_area"]
-for(i in grp) {
-        rating_area2 <- add_metrics(rating_area2,prem,i)
-}
-
-#data for table
-tb <- melt(raw) %>% mutate(
-        State=statecode,
-        Age=gsub("X","",variable),
-        Rating.Area=substr(ratingarea,3,4),
-        Exempt.Income=value
-) %>% select(State,Age,Rating.Area,Exempt.Income)
+# names(prem)[names(prem)=="X0.20"] <- "X20"
+# 
+# add_metrics <- function(target,source,varname) {
+#         names(source)[names(source)==varname] <- "inc"
+#         target$inc <-  source$inc[order(match(source$rating_area,call))]
+#         names(target)[names(target)=="inc"] <- paste0("Age",varname)
+#         return(target)
+# }
+# 
+# grp <- names(prem)[names(prem)!="rating_area"]
+# for(i in grp) {
+#         rating_area2 <- add_metrics(rating_area2,prem,i)
+# }
+# 
+# #data for table
+# tb <- melt(raw) %>% mutate(
+#         State=statecode,
+#         Age=gsub("X","",variable),
+#         Rating.Area=substr(ratingarea,3,4),
+#         Exempt.Income=value
+# ) %>% select(State,Age,Rating.Area,Exempt.Income)
 
 
 

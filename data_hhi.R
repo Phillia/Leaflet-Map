@@ -109,15 +109,19 @@ library(data.table)
 cons <- data.table(drg)
 cons <- cons[ ,list(rating_area=call),by=c("market","year")] %>% data.frame()
 drg <- drg %>% full_join(cons,by=c("market","year","rating_area")) %>% mutate(newvar=paste0(market,"_",year))
+varlist <- unique(drg$newvar)
+drg <- drg %>% select(rating_area,hhi,var=newvar) %>% dcast(rating_area~var,value.var="hhi")
+rating_area2$name <- as.character(rating_area2$name)
+rating_area2@data <- rating_area2@data %>% left_join(drg,by=c("name"="rating_area"))
 
-add_metrics <- function(target,source,newname) {
-  source <- source %>% filter(newvar==newname)
-  target$new <-  source$hhi[order(match(source$rating_area,call))]
-  names(target)[names(target)=="new"] <- newname
-  return(target)
-}
-
-for(i in unique(drg$newvar)) {
-  rating_area2 <- add_metrics(rating_area2,drg,i)
-}
+# add_metrics <- function(target,source,newname) {
+#   source <- source %>% filter(newvar==newname)
+#   target$new <-  source$hhi[order(match(source$rating_area,call))]
+#   names(target)[names(target)=="new"] <- newname
+#   return(target)
+# }
+# 
+# for(i in unique(drg$newvar)) {
+#   rating_area2 <- add_metrics(rating_area2,drg,i)
+# }
 

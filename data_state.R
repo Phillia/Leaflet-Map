@@ -104,5 +104,5 @@ states <- read.delim("state.txt",header=TRUE,sep="|",colClasses="character") %>%
 test <- read.csv("reinsurance-as-share-of-total-incurred-claims.csv",header=F,stringsAsFactors = F) 
 names(test) <- c("state","share")
 rating_area2$state <- as.character(rating_area2$name) %>% substr(1,2)
-rating_area2 <- merge(rating_area2,test,by="state")
+rating_area2@data <- left_join(rating_area2@data ,test,by="state")
 

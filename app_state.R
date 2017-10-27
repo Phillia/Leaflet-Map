@@ -4,7 +4,7 @@ library(geojsonio)
 library(maptools)
 
 
-source("state_data.R")
+source("data_state.R")
 
 ui <- navbarPage("Map", id="nav",
                  tabPanel("Interactive map",
