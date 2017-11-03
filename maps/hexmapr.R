@@ -19,7 +19,7 @@ library(gridExtra)
 
 
 
-setwd("~/Box Sync/Active/Leaflet")
+setwd("~/Desktop/leaflet-map")
 rm(list=ls())
 
 clean <- function(shape){
@@ -52,6 +52,7 @@ new_cells_reg <-  calculate_cell_size(original_shapes, original_details,0.03, 'r
 resultreg <- assign_polygons(original_shapes,new_cells_reg)
 result_df_hex <- clean(resulthex)
 result_df_reg <- clean(resultreg)
+
 
 
 #https://www.r-bloggers.com/moving-the-earth-well-alaska-hawaii-with-r/
@@ -116,7 +117,7 @@ track.order <- data.frame(id=row.names(rating_area2@data),plotorder=rating_area2
                           name=rating_area2$name)
 
 #merge in variable to plot
-dt <- read_excel("providerplanmapdata.xls") %>% 
+dt <- read_excel("./maps/providerplanmapdata.xls") %>% 
         mutate(rating_area=paste0(st,"_",substring(market,3))) %>%
         select(rating_area,var='Number of provider plans (top coded at 3)')
 call <- data.frame(
@@ -137,49 +138,60 @@ original_details <- get_shape_details(original_shapes)
 shape <- original_shapes
 shape_details <- original_details
 learning_rate <- 0.03
+grid_type <- "hexagonal"
 
-max_allowed_area <- shape_details$total_area/shape_details$nhex
-hexagon_diam <- sqrt(max_allowed_area/2.598076) * 2
-cellsize <- shape_details$start_size
-
-repeat {
-        HexPts <- spsample(shape, type = grid_type, cellsize = cellsize, iter = 10000)
-        npolygons <- length(HexPts)
-        print(npolygons)
-        print(cellsize)
+calculate_cell_size2 <- function(shape, shape_details, learning_rate, grid_type, seed, cellsize2)
+{
+        set.seed(seed)
+        # = c('regular', 'hexagonal') check that regular and hexagon dont
+        # return different lists of points (list and list[[]] respectively?)
         
-        if (npolygons == shape_details$nhex)
-                break else if (npolygons > shape_details$nhex)
-                {
-                        print("too many polygons")
-                        cellsize_new <- cellsize * (1 + learning_rate)
-                        cellsize <- cellsize_new
-                } else
-                {
-                        # else (npolygons < shape_details$nhex)
-                        print("too few polygons")
-                        cellsize_new <- cellsize * (1 - learning_rate)
-                        cellsize <- cellsize_new
-                }
+        # Lets find some bounds for the optimisation that make sense.
+        max_allowed_area <- shape_details$total_area/shape_details$nhex
+        hexagon_diam <- sqrt(max_allowed_area/2.598076) * 2
+        
+        cellsize <- cellsize2
+        # cellsize <- shape_details$start_size
+        
+        repeat {
+                HexPts <- spsample(shape, type = grid_type, cellsize = cellsize, iter = 10000)
+                npolygons <- length(HexPts)
+                print(npolygons)
+                print(cellsize)
+                
+                if (npolygons == shape_details$nhex)
+                        break else if (npolygons > shape_details$nhex)
+                        {
+                                print("too many polygons")
+                                cellsize_new <- cellsize * (1 + learning_rate)
+                                cellsize <- cellsize_new
+                        } else
+                        {
+                                # else (npolygons < shape_details$nhex)
+                                print("too few polygons")
+                                cellsize_new <- cellsize * (1 - learning_rate)
+                                cellsize <- cellsize_new
+                        }
+        }
+        
+        print(paste0("The cellsize is ", cellsize))
+        
+        if (grid_type == "hexagonal")
+        {
+                Pols <- HexPoints2SpatialPolygons(HexPts)
+        } else
+        {
+                Pols <- SpatialPixels(HexPts)
+                Pols <- as(Pols, "SpatialPolygons")
+        }
+        # or spatial polygons? need to turn this into same object as hexagons
+        # above try making dataframe and going that route. need correct ids for
+        # match between then and now note <- cellsize could be unsolveable. Add
+        # rotation of grid if needed.
+        
+        return(list(HexPts, Pols))
+        
 }
-
-print(paste0("The cellsize is ", cellsize))
-
-if (grid_type == "hexagonal")
-{
-        Pols <- HexPoints2SpatialPolygons(HexPts)
-} else
-{
-        Pols <- SpatialPixels(HexPts)
-        Pols <- as(Pols, "SpatialPolygons")
-}
-# or spatial polygons? need to turn this into same object as hexagons
-# above try making dataframe and going that route. need correct ids for
-# match between then and now note <- cellsize could be unsolveable. Add
-# rotation of grid if needed.
-
-return(list(HexPts, Pols))
-
 
 
 ###
@@ -187,7 +199,7 @@ return(list(HexPts, Pols))
 
 
 
-new_cells_hex <-  calculate_cell_size(original_shapes, original_details,0.03, 'hexagonal',1)
+new_cells_hex <-  calculate_cell_size2(original_shapes, original_details,0.03, 'hexagonal',1,1)
 resulthex <- assign_polygons(original_shapes,new_cells_hex)
 
 
