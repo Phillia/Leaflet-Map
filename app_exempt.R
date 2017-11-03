@@ -10,7 +10,7 @@ library(geojsonio)
 library(maptools)
 
 
-source("data_exempt.R")
+source("./data_exempt.R")
 
 ui <- navbarPage("Map", id="nav",
                  
@@ -34,7 +34,7 @@ ui <- navbarPage("Map", id="nav",
                                             checkboxInput("check","Hide Rating Area Label"),
                                             selectInput("choose","Choose shape file",
                                                         c("USA",as.vector(states$STUSAB)),
-                                                        selected="TN"),
+                                                        selected="USA"),
                                             selectInput("age", "Minimum Exempt Income for Specific Age",
                                                         varlist,selected = "Age40"),
                                             h5("Data Source: CCIIO 2017 premium rates for individual non-smoker")
@@ -104,7 +104,7 @@ server <- function(input, output, session) {
         #reactive legend
         observe({
                 t <- input$choose  
-                leafletProxy("mymap") %>% clearControls() %>% addLegend("bottomleft",pal = pall, values = x(), title="By rating area")
+                leafletProxy("mymap") %>% clearControls() %>% addLegend("bottomleft",pal = pall, values = x(), title="Maximum Income for\nMandate Hardship Exemption")
         })
         
         #reactive rating area label
