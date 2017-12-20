@@ -85,7 +85,7 @@ honeycomb <- function(shape,st,seed=1) {
         plot(new_cells_hex[[2]], main = paste0(st,"_","Seed ",seed))
         dev.off()
         
-        save(out,file=paste0("./hexstate/",out,".rda"))
+        save(list=out,file=paste0("./hexstate/",out,".rda"))
         
 }
 
@@ -121,7 +121,7 @@ duet <- function(st1,st2,save1,save2,seed=1) {
                 jpeg(file=outname)
                 plot(s, main = paste0(st1,"_","Seed ",seed))
                 dev.off()
-                save(out,file=paste0("./hexstate/",out,".rda"))
+                save(list=out,file=paste0("./hexstate/",out,".rda"))
         }
 
         if(save2==TRUE) {
@@ -132,7 +132,7 @@ duet <- function(st1,st2,save1,save2,seed=1) {
                 jpeg(file=outname)
                 plot(s, main = paste0(st2,"_","Seed ",seed))
                 dev.off()
-                save(out,file=paste0("./hexstate/",out,".rda"))
+                save(list=out,file=paste0("./hexstate/",out,".rda"))
         }
         
         
